@@ -10,6 +10,7 @@ export interface ElevatorSimOptions extends ControlsBaseSimOptions {
   minHeight?: number
   maxHeight?: number
   startingHeight?: number
+  cascadeStages?: number
 }
 
 /**
@@ -21,6 +22,7 @@ export class ElevatorSim extends ControlsBaseSim {
   minHeight: number
   maxHeight: number
   startingHeight: number
+  cascadeStages: number
 
   constructor(canvas: HTMLCanvasElement, options: ElevatorSimOptions = {}) {
     super(canvas, options)
@@ -31,6 +33,7 @@ export class ElevatorSim extends ControlsBaseSim {
     this.minHeight = options.minHeight !== undefined ? options.minHeight : 0
     this.maxHeight = options.maxHeight !== undefined ? options.maxHeight : 1.0
     this.startingHeight = options.startingHeight !== undefined ? options.startingHeight : this.minHeight
+    this.cascadeStages = options.cascadeStages !== undefined ? options.cascadeStages : 1.0
 
     // Initialize position
     this.position = this.startingHeight
@@ -42,8 +45,8 @@ export class ElevatorSim extends ControlsBaseSim {
 
   override updatePhysics(): void {
     // Convert linear position/velocity to rotational
-    const rotPosition = this.position / this.drumRadius
-    const rotVelocity = this.velocity / this.drumRadius
+    const rotPosition = (this.position / this.cascadeStages) / this.drumRadius
+    const rotVelocity = (this.velocity / this.cascadeStages) / this.drumRadius
 
     // Calculate torque from voltage
     const backEmf = rotVelocity * (1 / this.motor.kv) * ((2 * Math.PI) / 60) // V
@@ -51,13 +54,13 @@ export class ElevatorSim extends ControlsBaseSim {
     const motorTorque = this.current * this.motor.kt // N-m
 
     // Calculate gravity torque
-    const gravityTorque = this.mass * 9.81 * this.drumRadius // N-m
+    const gravityTorque = this.mass * this.cascadeStages * 9.81 * this.drumRadius // N-m
 
     // Calculate net torque
     const netTorque = motorTorque - gravityTorque // N-m
 
     // Calculate rotational inertia (J = m*r²)
-    const rotInertia = this.mass * this.drumRadius * this.drumRadius
+    const rotInertia = this.mass * this.cascadeStages * this.drumRadius * this.drumRadius
 
     // Calculate rotational acceleration
     const rotAcceleration = netTorque / rotInertia // rad/s²

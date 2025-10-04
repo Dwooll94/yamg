@@ -79,6 +79,7 @@ export const formSchema = z.object({
       mass: z.number().optional(),
       massUnit: z.enum(["kg", "lbs"]).optional(),
       drumRadius: z.number().optional(),
+      cascadeStages: z.number().optional(),
     })
     .optional(),
 });
@@ -127,6 +128,7 @@ export function useCodeGeneratorForm() {
         mass: 5,
         massUnit: "kg",
         drumRadius: 0.0254,
+        cascadeStages : 1,
       },
     },
   });

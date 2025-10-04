@@ -70,6 +70,7 @@ export function createSimulationOptions(
         minHeight: formValues.elevatorParams?.hardLimitMin || 0,
         maxHeight: formValues.elevatorParams?.hardLimitMax || 1.0,
         startingHeight: formValues.elevatorParams?.startingHeight || 0,
+        cascadeStages: formValues.elevatorParams?.cascadeStages || 1.0,
       }
       return { simType: "ElevatorSim", options: elevatorOptions }
     }

@@ -116,6 +116,11 @@ async function processTemplate(
         ? data.elevatorParams.drumRadius
         : 0.0254; // Default 1 inch
 
+    const cascadeStages =
+      data.elevatorParams.cascadeStages !== undefined
+        ? data.elevatorParams.cascadeStages
+        : 1.0;
+
     // Convert mass from lbs to kg if needed
     let mass =
       data.elevatorParams.mass !== undefined ? data.elevatorParams.mass : 5.0;
@@ -129,6 +134,7 @@ async function processTemplate(
       hardLimitMax,
       drumRadius,
       mass,
+      cascadeStages
     });
   }
 

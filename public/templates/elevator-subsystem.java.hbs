@@ -47,6 +47,7 @@ public class {{subsystemName}} extends SubsystemBase {
   private final boolean enableSupplyLimit = {{enableSupplyLimit}};
   private final double supplyCurrentLimit = {{supplyCurrentLimit}};
   private final double drumRadius = {{drumRadius}}; // meters
+  private final double cascadeStages= {{cascadeStages}}; //Leave at 1 if continuous
   private final double minheight = 0;
   private final double maxheight = 1;
 
@@ -87,12 +88,12 @@ public class {{subsystemName}} extends SubsystemBase {
     elevatorSim = new ElevatorSim(
       dcMotor, // Motor type
       gearRatio,
-      {{mass}}, // Carriage mass (kg)
+      {{mass}} * cascadeStages, // Carriage mass (kg)
       drumRadius, // Drum radius (m)
-      {{hardLimitMin}}, // Min height (m)
-      {{hardLimitMax}}, // Max height (m)
+      {{hardLimitMin}} / cascadeStages, // Min height (m)
+      {{hardLimitMax}} / cascadeStages, // Max height (m)
       true, // Simulate gravity
-      {{startingHeight}} // Starting height (m)
+      {{startingHeight}} / cascadeStages // Starting height (m)
     );
     
     {{#if isSparkController}}
@@ -115,7 +116,7 @@ public class {{subsystemName}} extends SubsystemBase {
   private void controlLoopFn() {
     switch (currentControlMode) {
       case POSITION:
-        double currentPos = getPosition();
+        double currentPos = getPosition() * cascadeStages;
         double output = profiledPIDController.calculate(currentPos, targetPosition);
         double velocity = profiledPIDController.getSetpoint().velocity;
         double feedforwardOutput = feedforward.calculate(velocity);
@@ -123,7 +124,7 @@ public class {{subsystemName}} extends SubsystemBase {
         break;
         
       case VELOCITY:
-        double currentVel = getVelocity();
+        double currentVel = getVelocity() * cascadeStages;
         double velOutput = profiledPIDController.calculate(currentVel, targetVelocity);
         double accel = profiledPIDController.getSetpoint().velocity - currentVel;
         double velFeedforwardOutput = feedforward.calculate(targetVelocity, accel);
@@ -165,7 +166,7 @@ public class {{subsystemName}} extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
     // Meters to Rotations Ratio
-    double positionToRotations = (1 / (2.0 * Math.PI * drumRadius)) * gearRatio;
+    double positionToRotations = ((1 / (2.0 * Math.PI * drumRadius)) * gearRatio) / cascadeStages;
 
     // Set input voltage from motor controller to simulation
     elevatorSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(elevatorSim.getCurrentDrawAmps()), elevatorSim.getVelocityMetersPerSecond() * positionToRotations * 2 * Math.PI));
@@ -204,9 +205,9 @@ public class {{subsystemName}} extends SubsystemBase {
   {{/if}}
 public double getPosition{{positionUnit}}() {
   {{#if (eq positionUnit 'Degrees')}}
-  return getPosition() * 360;
+  return getPosition() * 360 * cascadeStages;
   {{else}}
-  return getPosition() * 2 * Math.PI;
+  return getPosition() * 2 * Math.PI * cascadeStages;
   {{/if}}
 }
 {{/if}}
@@ -260,7 +261,7 @@ public double getPosition{{positionUnit}}() {
    * @param position The target position in meters
    */
   public void setPosition(double position) {
-    setPosition(position, 0);
+    setPosition(position / cascadeStages, 0);
   }
   
   /**
@@ -270,7 +271,7 @@ public double getPosition{{positionUnit}}() {
    */
   public void setPosition(double position, double acceleration) {
     // Convert meters to rotations
-    double positionRotations = position / (2.0 * Math.PI * drumRadius);
+    double positionRotations = position / (2.0 * Math.PI * drumRadius * cascadeStages);
     
     {{#if isSparkController}}
     // Use the ProfiledPIDController
@@ -303,7 +304,7 @@ public double getPosition{{positionUnit}}() {
    */
   public void setVelocity(double velocity, double acceleration) {
     // Convert meters/sec to rotations/sec
-    double velocityRotations = velocity / (2.0 * Math.PI * drumRadius);
+    double velocityRotations = (velocity / (2.0 * Math.PI * drumRadius)) * cascadeStages;
     
     {{#if isSparkController}}
     // Use the ProfiledPIDController
@@ -312,7 +313,7 @@ public double getPosition{{positionUnit}}() {
     
     // If acceleration is specified, update constraints
     if (acceleration > 0) {
-      double maxAccelRotations = acceleration / (2.0 * Math.PI * drumRadius);
+      double maxAccelRotations = (acceleration / (2.0 * Math.PI * drumRadius)) / cascadeStages;
       constraints = new TrapezoidProfile.Constraints(constraints.maxVelocity, maxAccelRotations);
       profiledPIDController.setConstraints(constraints);
     }
@@ -369,13 +370,13 @@ public double getPosition{{positionUnit}}() {
       // Just set the position and let the profiled controller handle it
       setPosition(heightMeters);
       {{else}}
-      double currentHeight = getPosition() * (2.0 * Math.PI * drumRadius);
+      double currentHeight = getPosition() * (2.0 * Math.PI * drumRadius * cascadeStages);
       double error = heightMeters - currentHeight;
       double velocity = Math.signum(error) * Math.min(Math.abs(error) * 2.0, maxVelocity);
       setVelocity(velocity);
       {{/if}}
     }).until(() -> {
-      double currentHeight = getPosition() * (2.0 * Math.PI * drumRadius);
+      double currentHeight = getPosition() * (2.0 * Math.PI * drumRadius * cascadeStages);
       return Math.abs(heightMeters - currentHeight) < 0.02; // 2cm tolerance
     });
   }

@@ -56,6 +56,7 @@ export interface FormValues {
     mass?: number
     massUnit?: "kg" | "lbs"
     drumRadius?: number
+    cascadeStages?: number
   }
 }
 

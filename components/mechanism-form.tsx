@@ -838,6 +838,29 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name= "elevatorParams.cascadeStages"
+                  render={({field}) => (
+                    <FormItem>
+                      <FormLabel>Cascade Stages</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="1"
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) => handleNumberChange(e, field.onChange)}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Number of cascade stages. Leave at 1 if continuous.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </AccordionContent>
           </AccordionItem>
